@@ -19,16 +19,20 @@ public class GrantAccessRepository {
     }
 
     // Insert GrantAccess record into database
-    public void insert(GrantAccess grantAccess) {
+    public boolean insert(GrantAccess grantAccess) {
+        boolean success = false;
         try {
             trans.begin();
-            em.persist(grantAccess);  // Add GrantAccess entity to persistence context
+            em.persist(grantAccess);
             trans.commit();
+            success = true;
         } catch (Exception exception) {
             if (trans.isActive()) {
-                trans.rollback();  // Rollback transaction if error occurs
+                trans.rollback();
             }
             logger.log(Level.SEVERE, "Failed to insert grant access: " + exception.getMessage(), exception);
         }
+        return success;
     }
+
 }

@@ -8,6 +8,7 @@ import jakarta.persistence.*;
         @NamedQuery(name = "Account.findByFullNameOrderByPasswordAsc", query = "select a from Account a where a.fullName = :fullName order by a.password"),
         @NamedQuery(name = "Account.deleteByPhone", query = "delete from Account a where a.phone = :phone"),
         @NamedQuery(name = "Account.updateAccountIdByPassword", query = "update Account a set a.accountId = :accountId where a.password = :password")
+
 })
 public class Account {
 
@@ -43,6 +44,7 @@ public class Account {
         this.phone = phone;
         this.status = status;
     }
+
 
     // Getter và Setter cho các thuộc tính
     public String getAccountId() {

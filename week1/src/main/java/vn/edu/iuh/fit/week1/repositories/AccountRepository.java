@@ -10,6 +10,7 @@ import vn.edu.iuh.fit.week1.entities.Account;
 import vn.edu.iuh.fit.week1.entities.GrantAccess;
 import vn.edu.iuh.fit.week1.entities.Role;
 
+import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
@@ -17,7 +18,9 @@ import java.util.logging.Logger;
 
 public class AccountRepository {
     private final Logger logger = Logger.getLogger(AccountRepository.class.getName());
+    @Inject
     private EntityManager em;
+    @Inject
     private EntityTransaction trans;
 
     @Inject
@@ -25,9 +28,11 @@ public class AccountRepository {
     @Inject
     private GrantAccessRepository grantAccessRepository;
 
-    public AccountRepository(RoleRepository roleRepository) {
+    public AccountRepository() {
         em = Persistence.createEntityManagerFactory("mariaDB").createEntityManager();
         trans = em.getTransaction();
+        this.roleRepository = new RoleRepository();  // Initialize as needed
+        this.grantAccessRepository = new GrantAccessRepository();  // Initialize as needed
     }
 
     // Insert account and grant default access to all roles with status false
@@ -36,24 +41,16 @@ public class AccountRepository {
         try {
             trans.begin();
 
-            // Mã hóa mật khẩu trước khi lưu vào cơ sở dữ liệu
-            account.setPassword(BCrypt.hashpw(account.getPassword(), BCrypt.gensalt()));
+            // Hash the password before saving it to the database
             em.persist(account);
 
-            // Grant default access to all roles
-            List<Role> roles = roleRepository.getAllRoles();
-            for (Role role : roles) {
-                GrantAccess grantAccess = new GrantAccess(account.getAccountId(), role.getRoleId(), false, "initialize");
-                grantAccessRepository.insert(grantAccess);
-            }
-
-            trans.commit();
+            trans.commit();  // Commit the transaction after inserting the Account
             success = true;
-        } catch (Exception exception) {
+        } catch (Exception e) {
             if (trans.isActive()) {
                 trans.rollback();
             }
-            logger.log(Level.SEVERE, "Failed to insert account: " + exception.getMessage(), exception);
+            logger.log(Level.SEVERE, "Failed to insert account: " + e.getMessage(), e);
         }
         return success;
     }
@@ -132,7 +129,29 @@ public class AccountRepository {
             return false;
         }
     }
-
+    public boolean deleteAccount(String accountId) {
+        try {
+            trans.begin();
+            Account account = em.find(Account.class, accountId);
+            if (account != null) {
+                em.remove(account);
+                trans.commit();
+                return true;
+            } else {
+                logger.log(Level.WARNING, "Account with ID " + accountId + " not found.");
+            }
+        } catch (Exception exception) {
+            if (trans.isActive()) {
+                trans.rollback();
+            }
+            logger.log(Level.SEVERE, "Failed to delete account: " + exception.getMessage(), exception);
+        } finally {
+            if (trans.isActive()) {
+                trans.rollback();
+            }
+        }
+        return false;
+    }
     public Account getAccountById(String accountId) {
         try {
             return em.find(Account.class, accountId);
@@ -141,5 +160,36 @@ public class AccountRepository {
             return null;
         }
     }
+    //role lấy từ bảng grantaccess
+    public String getRoleIdbyAccountId(String accountId) {
+        try {
+            TypedQuery<GrantAccess> query = em.createQuery("SELECT g FROM GrantAccess g WHERE g.accountId = :accountId", GrantAccess.class);
+            query.setParameter("accountId", accountId);
+            return query.getSingleResult().getRoleId();
+        } catch (Exception exception) {
+            logger.log(Level.SEVERE, "Failed to fetch role by account ID: " + exception.getMessage(), exception);
+            return null;
+        }
+    }
 
+    public void updateAccount(Account account) {
+        try {
+            trans.begin();
+            Account existingAccount = em.find(Account.class, account.getAccountId());
+            if (existingAccount != null) {
+                existingAccount.setFullName(account.getFullName());
+                existingAccount.setEmail(account.getEmail());
+                existingAccount.setPassword(account.getPassword());
+                existingAccount.setPhone(account.getPhone());
+                existingAccount.setStatus(account.getStatus());
+                em.merge(existingAccount);
+                trans.commit();
+            }
+        } catch (Exception exception) {
+            if (trans.isActive()) {
+                trans.rollback();
+            }
+            logger.log(Level.SEVERE, "Failed to update account: " + exception.getMessage(), exception);
+        }
+    }
 }

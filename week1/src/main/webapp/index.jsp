@@ -92,7 +92,7 @@
         <p class="error-message">Invalid username or password. Please try again.</p>
         <% } %>
     </form>
-    <a href="register.jsp" class="register-link">Create an account</a>
+
 </div>
 </body>
 </html>
