@@ -14,8 +14,14 @@ import vn.edu.iuh.fit.week1.repositories.LogRepository;
 import vn.edu.iuh.fit.week1.repositories.RoleRepository;
 
 import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
+
+
+
 
 @WebServlet(urlPatterns = {"/ControllerServlet"})
 public class ControllerServlet extends HttpServlet {
@@ -34,46 +40,49 @@ public class ControllerServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-            String action = request.getParameter("action");
+        String action = request.getParameter("action");
 
-        System.out.println(action ) ;
-
-        switch (action != null ? action.toLowerCase() : "") {
-            case "login":
-                handleLogin(request, response);
-                break;
-            case "adduser":
-                handleAddUser(request, response);
-                break;
-            case "updateuser":
-                handleEditUser(request, response);
-                break;
-//            case "deleteuser":
-//                handleDeleteUser(request, response);
-//                break;
-            default:
-                response.getWriter().println("Invalid action");
-                break;
+        if (action != null) {
+            switch (action.toLowerCase()) {
+                case "login":
+                    handleLogin(request, response);
+                    break;
+                case "adduser":
+                    handleAddUser(request, response);
+                    break;
+                case "updateuser":
+                    handleEditUser(request, response);
+                    break;
+                case "assignrole":
+                    handleAssignRole(request, response);
+                    break;
+                default:
+                    response.sendRedirect("dashboard.jsp?error=invalidAction");
+                    break;
+            }
+        } else {
+            response.sendRedirect("dashboard.jsp?error=noAction");
         }
     }
-
 
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String action = request.getParameter("action");
 
-        System.out.println(action);
-
-        switch (action != null ? action.toLowerCase() : "") {
-            case "deleteuser":
-                handleDeleteUser(request, response);
-                break;
-            default:
-                List<Account> accounts = accountRepository.getAllAccounts(); // Use the initialized accountRepository
-                request.setAttribute("accounts", accounts);
-                RequestDispatcher dispatcher = request.getRequestDispatcher("dashboard.jsp");
-                dispatcher.forward(request, response);
-                break;
+        if (action != null) {
+            switch (action.toLowerCase()) {
+                case "deleteuser":
+                    handleDeleteUser(request, response);
+                    break;
+                default:
+                    List<Account> accounts = accountRepository.getAllAccounts(); // Use the initialized accountRepository
+                    request.setAttribute("accounts", accounts);
+                    RequestDispatcher dispatcher = request.getRequestDispatcher("dashboard.jsp");
+                    dispatcher.forward(request, response);
+                    break;
+            }
+        } else {
+            response.sendRedirect("dashboard.jsp?error=noAction");
         }
     }
 
@@ -89,30 +98,44 @@ public class ControllerServlet extends HttpServlet {
         Optional<Account> accountOpt = accountRepository.logon(username, password);
 
         if (accountOpt.isPresent()) {
-            // Get the roleId from GrantAccess
             String roleId = accountRepository.getRoleIdbyAccountId(username);
-
-            // Set the user session
             request.getSession().setAttribute("user", username);
 
             if ("admin".equals(roleId)) {
-                // Admin login
                 List<Account> accounts = accountRepository.getAllAccounts();
                 request.setAttribute("accounts", accounts);
                 RequestDispatcher dispatcher = request.getRequestDispatcher("dashboard.jsp");
                 dispatcher.forward(request, response);
             } else {
-                // User login
                 Account userAccount = accountRepository.getAccountById(username);
                 request.setAttribute("account", userAccount);
                 RequestDispatcher dispatcher = request.getRequestDispatcher("userDashboard.jsp");
                 dispatcher.forward(request, response);
             }
         } else {
-            // Invalid login
             response.sendRedirect("index.jsp?error=invalid");
         }
     }
+
+    private void handleAssignRole(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        String accountId = request.getParameter("accountId");
+        String[] roleIds = request.getParameterValues("roleIds");
+
+        if (accountId == null || roleIds == null || roleIds.length == 0) {
+            response.sendRedirect("dashboard.jsp?error=missing");
+            return;
+        }
+
+        try {
+            boolean success = grantAccessRepository.assignRolesToUser(accountId, Arrays.asList(roleIds));
+            response.sendRedirect(success ? "dashboard.jsp?message=roleAssigned" : "dashboard.jsp?error=failed");
+        } catch (Exception e) {
+
+            response.sendRedirect("dashboard.jsp?error=exception");
+        }
+    }
+
+
 
 
     private void handleAddUser(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
@@ -121,7 +144,8 @@ public class ControllerServlet extends HttpServlet {
         String email = request.getParameter("email");
         String password = request.getParameter("password");
         String phone = request.getParameter("phone");
-        Byte status = Byte.valueOf(request.getParameter("status"));
+        String statusStr = request.getParameter("status");
+        Byte status = statusStr != null ? Byte.valueOf(statusStr) : null;
 
         if (username == null || email == null || password == null || phone == null || status == null) {
             response.sendRedirect("addUser.jsp?error=missing");
@@ -138,49 +162,37 @@ public class ControllerServlet extends HttpServlet {
         }
     }
 
-
-    private void handleEditUser(HttpServletRequest request, HttpServletResponse response) {
-        // Get user parameters from the request
+    private void handleEditUser(HttpServletRequest request, HttpServletResponse response) throws IOException, ServletException {
         String id = request.getParameter("id");
         String username = request.getParameter("username");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
         String phone = request.getParameter("phone");
-        String status = request.getParameter("status");
+        String statusStr = request.getParameter("status");
+        Byte status = statusStr != null ? Byte.valueOf(statusStr) : null;
 
-        // Initialize AccountRepository
-        AccountRepository accountRepository = new AccountRepository();
+        String[] roleIds = request.getParameterValues("roles");
+
+        if (id == null || username == null || email == null || password == null || phone == null || status == null) {
+            response.sendRedirect("editUser.jsp?error=missing");
+            return;
+        }
 
         try {
-            // Validate input (e.g., check for null or empty fields)
-            if (id == null || username == null || email == null || password == null || phone == null || status == null) {
-                throw new IllegalArgumentException("All fields are required.");
-            }
-
-            // Create Account object
-            Account account = new Account();
-            account.setAccountId(id);
-            account.setFullName(username);
-            account.setEmail(email);
-            account.setPassword(password);
-            account.setPhone(phone);
-            account.setStatus(Byte.valueOf(status));
-
-            // Update account in the database
+            // Update the account details
+            Account account = new Account(id, username, password, email, phone, status);
             accountRepository.updateAccount(account);
 
-            // Redirect to dashboard with success message
-            request.setAttribute("message", "User updated successfully!");
-            response.sendRedirect("dashboard.jsp");
+            // Update roles
+            List<String> roleIdsList = roleIds != null ? Arrays.asList(roleIds) : Collections.emptyList();
+            grantAccessRepository.updateRoles(id, roleIdsList);
 
+            response.sendRedirect("dashboard.jsp?message=userUpdated");
         } catch (Exception e) {
-            // Handle exceptions (e.g., validation errors, database errors)
+            e.printStackTrace();
             request.setAttribute("errorMessage", "Error updating user: " + e.getMessage());
-            try {
-                request.getRequestDispatcher("editUser.jsp").forward(request, response);
-            } catch (ServletException | IOException ex) {
-                ex.printStackTrace();
-            }
+            RequestDispatcher dispatcher = request.getRequestDispatcher("editUser.jsp");
+            dispatcher.forward(request, response);
         }
     }
 
@@ -194,15 +206,10 @@ public class ControllerServlet extends HttpServlet {
 
         try {
             boolean success = accountRepository.deleteAccount(accountId);
-            if (success) {
-                response.sendRedirect("dashboard.jsp?message=deleted");
-            } else {
-                response.sendRedirect("dashboard.jsp?error=failed");
-            }
+            response.sendRedirect(success ? "dashboard.jsp?message=deleted" : "dashboard.jsp?error=failed");
         } catch (Exception e) {
             e.printStackTrace();
             response.sendRedirect("dashboard.jsp?error=exception");
         }
     }
-
 }

@@ -4,15 +4,17 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
+import java.io.Serializable;
+
 @Entity
 @Table(name = "grant_access")
 @NamedQueries({
         @NamedQuery(name = "GrantAccess.findByAccount_FullNameOrderByAccount_AccountIdAsc", query = "select g from GrantAccess g where g.account.fullName = :fullName order by g.account.accountId"),
         @NamedQuery(name = "GrantAccess.deleteByAccount_Email", query = "delete from GrantAccess g where g.account.email = :email"),
         @NamedQuery(name = "GrantAccess.findByAccountPassword", query = "select g.account from GrantAccess g where g.account.password = :password")
-
 })
-public class GrantAccess {
+public class GrantAccess implements Serializable {
+
     @Id
     @Column(name = "account_id", nullable = false)
     private String accountId;
@@ -28,12 +30,15 @@ public class GrantAccess {
     private String note;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @OnDelete(action = OnDeleteAction.CASCADE)
     @JoinColumn(name = "account_id", insertable = false, updatable = false)
     private Account account;
 
-    public GrantAccess() {
-    }
+    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    @JoinColumn(name = "role_id", insertable = false, updatable = false)
+    private Role role;
+
+    // Constructors, getters and setters
+    public GrantAccess() {}
 
     public GrantAccess(String accountId, String roleId, Boolean isGrant, String note) {
         this.accountId = accountId;
@@ -80,5 +85,13 @@ public class GrantAccess {
 
     public void setAccount(Account account) {
         this.account = account;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

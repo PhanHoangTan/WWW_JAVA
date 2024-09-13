@@ -1,5 +1,9 @@
 <%@ page import="vn.edu.iuh.fit.week1.entities.Account" %>
+<%@ page import="vn.edu.iuh.fit.week1.entities.Role" %>
 <%@ page import="vn.edu.iuh.fit.week1.repositories.AccountRepository" %>
+<%@ page import="vn.edu.iuh.fit.week1.repositories.RoleRepository" %>
+<%@ page import="vn.edu.iuh.fit.week1.repositories.GrantAccessRepository" %>
+<%@ page import="java.util.List" %>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <!DOCTYPE html>
 <html>
@@ -75,6 +79,14 @@
         AccountRepository accountRepository = new AccountRepository();
         Account account = accountRepository.getAccountById(String.valueOf(id));
 
+        // Fetch all roles
+        RoleRepository roleRepository = new RoleRepository();
+        List<Role> allRoles = roleRepository.getAllRoles();
+
+        // Fetch roles assigned to the current account
+        GrantAccessRepository grantAccessRepository = new GrantAccessRepository();
+        List<Role> userRoles = grantAccessRepository.getRolesByAccountId(account.getAccountId());
+
         if (account != null) {
     %>
     <form action="ControllerServlet" method="post">
@@ -94,6 +106,23 @@
 
         <label for="status">Status:</label>
         <input type="text" id="status" name="status" value="<%= account.getStatus() %>" required>
+
+        <label>Roles:</label>
+        <%
+            // Check if the roles list is not null and contains roles
+            if (allRoles != null && !allRoles.isEmpty()) {
+                for (Role role : allRoles) {
+                    // Determine if the role is assigned to the user
+                    boolean isChecked = userRoles.stream().anyMatch(r -> r.getRoleId().equals(role.getRoleId()));
+        %>
+        <label>
+            <input type="checkbox" name="roles" value="<%= role.getRoleId() %>" <%= isChecked ? "checked" : "" %>>
+            <%= role.getRoleName() %>
+        </label>
+        <%
+                }
+            }
+        %>
 
         <button type="submit" name="action" value="updateuser">Lưu Thay Đổi</button>
     </form>

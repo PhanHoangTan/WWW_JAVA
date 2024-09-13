@@ -8,6 +8,7 @@ import jakarta.persistence.TypedQuery;
 import org.mindrot.jbcrypt.BCrypt;
 import vn.edu.iuh.fit.week1.entities.Account;
 import vn.edu.iuh.fit.week1.entities.GrantAccess;
+import vn.edu.iuh.fit.week1.entities.GrantAccessId;
 import vn.edu.iuh.fit.week1.entities.Role;
 
 import java.sql.PreparedStatement;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class AccountRepository {
     private final Logger logger = Logger.getLogger(AccountRepository.class.getName());
@@ -58,20 +60,7 @@ public class AccountRepository {
 
 
     // Update an existing account
-    public void updateAccountAccountIdByAccountPassword(EntityManager em, String password, String newAccountId) {
-        // Tìm kiếm tài khoản theo mật khẩu
-        Account account = em.createNamedQuery("GrantAccess.findByAccountPassword", Account.class)
-                .setParameter("password", password)
-                .getSingleResult();
 
-        if (account != null) {
-            // Cập nhật thuộc tính accountId
-            account.setAccountId(newAccountId);
-
-            // Lưu thay đổi
-            em.merge(account);
-        }
-    }
 
 
     // Update the status of an account
@@ -192,4 +181,68 @@ public class AccountRepository {
             logger.log(Level.SEVERE, "Failed to update account: " + exception.getMessage(), exception);
         }
     }
+    public void updateRoles(String accountId, List<String> roleNames) {
+        try {
+            em.getTransaction().begin();
+
+            // Tìm kiếm đối tượng Account theo accountId
+            Account account = em.find(Account.class, accountId);
+
+            if (account != null) {
+                // Log current roles
+                System.out.println("Current roles: " + account.getGrantAccesses().stream()
+                        .map(grantAccess -> grantAccess.getRole().getRoleName())
+                        .collect(Collectors.toList()));
+
+                // Retrieve current roles
+                List<String> currentRoleNames = account.getGrantAccesses().stream()
+                        .map(grantAccess -> grantAccess.getRole().getRoleName())
+                        .collect(Collectors.toList());
+
+                // Nếu danh sách quyền thay đổi, thực hiện cập nhật
+                if (!currentRoleNames.equals(roleNames)) {
+                    // Xóa các quyền cũ khỏi cơ sở dữ liệu
+                    for (GrantAccess grantAccess : account.getGrantAccesses()) {
+                        em.remove(grantAccess);
+                    }
+                    account.getGrantAccesses().clear(); // Xóa khỏi bộ nhớ
+
+                    // Thêm các quyền mới
+                    for (String roleName : roleNames) {
+                        // Tìm kiếm Role theo roleName
+                        Role role = em.createNamedQuery("Role.findByRoleName", Role.class)
+                                .setParameter("roleName", roleName)
+                                .getSingleResult();
+
+                        if (role != null) {
+                            // Tạo GrantAccess mới
+                            GrantAccess grantAccess = new GrantAccess();
+                            grantAccess.setAccountId(accountId);
+                            grantAccess.setRoleId(role.getRoleId());
+                            grantAccess.setIsGrant(true);
+
+                            // Thiết lập các liên kết
+                            grantAccess.setAccount(account);
+                            grantAccess.setRole(role);
+
+                            // Persist GrantAccess và cập nhật Account
+                            em.persist(grantAccess);
+                            account.getGrantAccesses().add(grantAccess);
+                        }
+                    }
+                }
+
+                // Merge account để cập nhật vào cơ sở dữ liệu
+                em.merge(account);
+            }
+
+            em.getTransaction().commit();
+        } catch (Exception e) {
+            if (em.getTransaction().isActive()) {
+                em.getTransaction().rollback();
+            }
+            e.printStackTrace();
+        }
+    }
+
 }

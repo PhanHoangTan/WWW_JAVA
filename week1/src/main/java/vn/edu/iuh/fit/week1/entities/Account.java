@@ -2,6 +2,9 @@ package vn.edu.iuh.fit.week1.entities;
 
 import jakarta.persistence.*;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
+
 @Entity
 @Table(name = "account")
 @NamedQueries({
@@ -30,6 +33,17 @@ public class Account {
 
     @Column(name = "status", nullable = false)
     private Byte status;
+
+    @OneToMany(mappedBy = "account")
+    private Set<GrantAccess> grantAccesses = new LinkedHashSet<>();
+
+    public Set<GrantAccess> getGrantAccesses() {
+        return grantAccesses;
+    }
+
+    public void setGrantAccesses(Set<GrantAccess> grantAccesses) {
+        this.grantAccesses = grantAccesses;
+    }
 
     // Constructor mặc định
     public Account() {

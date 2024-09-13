@@ -1,12 +1,16 @@
 package vn.edu.iuh.fit.week1.entities;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
+
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "role")
+@NamedQueries({
+//        Role.findByRoleName
+        @NamedQuery(name = "Role.findByRoleName", query = "SELECT r FROM Role r WHERE r.roleName = :roleName")
+})
 public class Role {
     @Id
     @Column(name = "role_id", nullable = false, length = 50)
@@ -20,6 +24,17 @@ public class Role {
 
     @Column(name = "status", nullable = false)
     private int status;
+
+    @OneToMany(mappedBy = "role")
+    private Set<GrantAccess> grantAccesses = new LinkedHashSet<>();
+
+    public Set<GrantAccess> getGrantAccesses() {
+        return grantAccesses;
+    }
+
+    public void setGrantAccesses(Set<GrantAccess> grantAccesses) {
+        this.grantAccesses = grantAccesses;
+    }
 
     public Role() {
     }
@@ -55,8 +70,8 @@ public class Role {
         this.description = description;
     }
 
-    public int getStatus() {
-        return status;
+    public byte getStatus() {
+        return (byte) status;
     }
 
     public void setStatus(Byte status) {
