@@ -127,14 +127,14 @@
                 <% } %>
             </td>
             <td>
-                <a href="controls?action=edit_product&id=<%= id %>" class="update">Update</a>
-                <button onclick="window.location.href='<%= product.getStatus().getValue() == 1 ? "controls?action=delete_product&id=" + id : "controls?action=active_product&id=" + id %>';">
-                    <%= product.getStatus().getValue() == 1 ? "Delete" : "Activate" %>
+                <a href="updateProduct.jsp?id=<%= id %>" class="update">Update</a>
+                <button onclick="window.location.href='controls?action=<%= product.getStatus().getValue() == 1 ? "deactivate_product" : "activate_product" %>&id=<%= id %>';">
+                    <%= product.getStatus().getValue() == 1 ? "Activate" : "Deactivate" %>
                 </button>
-                <button onclick="window.location.href='index.jsp';">Back</button>
-                <button>Add to Cart</button>
+                <button onclick="window.location.href='controls?action=delete_product&id=<%= id %>';">Delete</button>
             </td>
         </tr>
+        <button onclick="window.location.href='index.jsp';">Back</button>
         <% } %>
         </tbody>
     </table>

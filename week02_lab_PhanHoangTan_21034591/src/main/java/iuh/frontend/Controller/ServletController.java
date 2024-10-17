@@ -1,6 +1,7 @@
 package iuh.frontend.Controller;
 
 
+import iuh.backend.enums.ProductStatus;
 import iuh.frontend.Model.CustomerModel;
 import iuh.frontend.Model.EmployeeModel;
 import iuh.frontend.Model.ProductModel;
@@ -46,6 +47,11 @@ public class ServletController extends HttpServlet {
                         updateCustomerModel.updateCustomer(request, response);
                         response.sendRedirect("customer.jsp"); // Chuyển hướng về trang khách hàng
                         break;
+                    case "update_product":
+                        ProductModel updateProductModel = new ProductModel();
+                        updateProductModel.updateProduct(request, response);
+                        response.sendRedirect("product.jsp"); // Chuyển hướng về trang sản phẩm
+                        break;
                     default:
                         response.sendRedirect("index.jsp");
                         break;
@@ -82,9 +88,13 @@ public class ServletController extends HttpServlet {
                         EmployeeModel employeeModel2 = new EmployeeModel();
                         employeeModel2.activeEmployee(request, response);
                         break;
-                    case "active_product":
+                    case "activate_product":
                         ProductModel productModel2 = new ProductModel();
-                        productModel2.activeProduct(request, response);
+                        productModel2.updateProductStatus(request, response, ProductStatus.ACTIVE);
+                        break;
+                    case "deactivate_product":
+                        ProductModel productModel3 = new ProductModel();
+                        productModel3.updateProductStatus(request, response, ProductStatus.TERMINATED);
                         break;
                     default:
                         response.sendRedirect("index.jsp");

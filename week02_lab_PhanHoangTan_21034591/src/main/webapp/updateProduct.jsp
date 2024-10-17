@@ -1,14 +1,28 @@
+<%--
+  Created by IntelliJ IDEA.
+  User: Admin
+  Date: 9/28/2024
+  Time: 7:45 PM
+  To change this template use File | Settings | File Templates.
+--%>
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page import="iuh.backend.models.Product" %>
+<%@ page import="iuh.backend.enums.ProductStatus" %>
 <%@ page import="iuh.backend.services.ProductService" %>
-<%@ page import="iuh.backend.models.Productprice" %>
-<%@ page import="java.util.List" %>
-<%@ page import="iuh.backend.models.Productimage" %>
+
+<%@ page import="java.io.IOException" %>
+<%
+    // Fetch product details using the product ID from the request
+    Long productId = Long.parseLong(request.getParameter("id"));
+    ProductService productService = new ProductService();
+    Product product = productService.getProductById(productId);
+%>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Insert Product</title>
+    <title>Update Product</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -72,62 +86,55 @@
 </head>
 <body>
 <div id="container">
-    <h3>Insert New Product</h3>
-    <form action="controls?action=insert_product" method="post">
+    <h3>Update Product</h3>
+    <form action="controls?action=update_product" method="post">
+        <input type="hidden" name="id" value="<%= product.getId() %>">
         <table>
             <tr>
                 <td>Product Name:</td>
-                <td><input type="text" name="name" required></td>
+                <td><input type="text" name="name" value="<%= product.getName() %>" required></td>
             </tr>
             <tr>
                 <td>Description:</td>
-                <td><input type="text" name="description" required></td>
+                <td><input type="text" name="description" value="<%= product.getDescription() %>" required></td>
             </tr>
             <tr>
                 <td>Unit:</td>
-                <td><input type="text" name="unit" required></td>
+                <td><input type="text" name="unit" value="<%= product.getUnit() %>" required></td>
             </tr>
             <tr>
                 <td>Manufacturer:</td>
-                <td><input type="text" name="manufacturer" required></td>
+                <td><input type="text" name="manufacturer" value="<%= product.getManufacturerName() %>" required></td>
             </tr>
             <tr>
                 <td>Status:</td>
                 <td>
                     <select name="status" required>
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="INACTIVE">INACTIVE</option>
-                        <option value="TERMINATED">TERMINATED</option>
+                        <option value="ACTIVE" <%= product.getStatus() == ProductStatus.ACTIVE ? "selected" : "" %>>ACTIVE</option>
+                        <option value="INACTIVE" <%= product.getStatus() == ProductStatus.IN_ACTIVE ? "selected" : "" %>>INACTIVE</option>
+                        <option value="TERMINATED" <%= product.getStatus() == ProductStatus.TERMINATED ? "selected" : "" %>>TERMINATED</option>
                     </select>
                 </td>
             </tr>
             <tr>
                 <td>Price:</td>
-                <td>
-                    <input type="text" name="price" required>
-                </td>
+                <td><input type="text" name="price" value="<%= productService.getProductPrice(product.getId()) %>" required></td>
             </tr>
             <tr>
                 <td>Image URL:</td>
-                <td>
-                    <input type="text" name="imagePath" required>
-                </td>
+                <td><input type="text" name="imagePath" value="<%= productService.getProductImage(product.getId()) %>" required></td>
             </tr>
             <tr>
                 <td>Note:</td>
-                <td>
-                    <input type="text" name="note" required>
-                </td>
+                <td><input type="text" name="note" value="<%= productService.getProductPriceNote(product.getId()) %>"></td>
             </tr>
             <tr>
                 <td>Alternative:</td>
-                <td>
-                    <input type="text" name="alternative" required>
-                </td>
+                <td><input type="text" name="alternative" value="<%= productService.getProductImageAlternative(product.getId()) %>"></td>
             </tr>
         </table>
         <div class="form-actions">
-            <input type="submit" value="Insert Product">
+            <input type="submit" value="Update Product">
             <input type="reset" value="Reset">
             <button onclick="window.location.href='product.jsp';">Back</button>
         </div>

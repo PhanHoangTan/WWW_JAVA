@@ -53,7 +53,7 @@ public class ProductRepository {
             em.merge(product1);
             et.commit();
         } catch (Exception e) {
-            logger.error(e.getMessage());
+            logger.error(e.getMessage(), e);
             et.rollback();
         }
     }
@@ -94,14 +94,6 @@ public class ProductRepository {
                 .getResultList();
     }
 
-    public List<Productprice> getAllPrice() {
-        return em.createQuery("SELECT p FROM Productprice p", Productprice.class)
-                .getResultList();
-    }
-    public List<Productimage> getAllImgage() {
-        return em.createQuery("SELECT pi FROM Productimage pi", Productimage.class)
-                .getResultList();
-    }
     public void saveProductPrice(Productprice productPrice) {
         try {
             et.begin();
@@ -125,5 +117,80 @@ public class ProductRepository {
 
     public void close() {
         em.close();
+    }
+
+    public boolean deleteProduct(long id) {
+        try {
+            et.begin();
+
+            // Delete related product prices
+            List<Productprice> productPrices = em.createQuery("SELECT p FROM Productprice p WHERE p.product.id = :productId", Productprice.class)
+                    .setParameter("productId", id)
+                    .getResultList();
+            for (Productprice productPrice : productPrices) {
+                em.remove(productPrice);
+            }
+
+            // Delete related product images
+            List<Productimage> productImages = em.createQuery("SELECT pi FROM Productimage pi WHERE pi.product.id = :productId", Productimage.class)
+                    .setParameter("productId", id)
+                    .getResultList();
+            for (Productimage productImage : productImages) {
+                em.remove(productImage);
+            }
+
+            // Delete the product
+            Product product = em.find(Product.class, id);
+            em.remove(product);
+
+            et.commit();
+            return true;
+        } catch (Exception e) {
+            logger.error(e.getMessage(), e);
+            et.rollback();
+            return false;
+        }
+    }
+
+    public void getProductPrice(Long id) {
+        try {
+            TypedQuery<Productprice> query = em.createQuery("SELECT p FROM Productprice p WHERE p.product.id = :productId", Productprice.class);
+            query.setParameter("productId", id);
+            List<Productprice> productPrices = query.getResultList();
+        } catch (Exception e) {
+            logger.error("Error fetching product price: " + e.getMessage(), e);
+        }
+    }
+
+    public void getProductImage(Long id) {
+        try {
+            TypedQuery<Productimage> query = em.createQuery("SELECT pi FROM Productimage pi WHERE pi.product.id = :productId", Productimage.class);
+            query.setParameter("productId", id);
+            List<Productimage> productImages = query.getResultList();
+        } catch (Exception e) {
+            logger.error("Error fetching product image: " + e.getMessage(), e);
+    }
+}
+
+    public void getProductPriceNote() {
+        try {
+            TypedQuery<Productprice> query = em.createQuery("SELECT p FROM Productprice p WHERE p.note IS NOT NULL", Productprice.class);
+            List<Productprice> productPrices = query.getResultList();
+        } catch (Exception e) {
+            logger.error("Error fetching product price note: " + e.getMessage(), e);
+    }
+    }
+
+    public void getProductImageAlternative() {
+        try {
+            TypedQuery<Productimage> query = em.createQuery("SELECT pi FROM Productimage pi WHERE pi.alternative IS NOT NULL", Productimage.class);
+            List<Productimage> productImages = query.getResultList();
+        } catch (Exception e) {
+            logger.error("Error fetching product image alternative: " + e.getMessage(), e);
+    }
+    }
+
+    public Product getProductById(Long productId) {
+        return em.find(Product.class, productId);
     }
 }

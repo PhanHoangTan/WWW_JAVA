@@ -33,13 +33,8 @@ public class ProductService {
         return productRepository.findById(id);
     }
     public boolean deleteProduct(long id) {
-        Optional<Product> op = findById(id);
-        if (op.isPresent()) {
-            Product product = op.get();
-            productRepository.setStatus(product, ProductStatus.TERMINATED);
-            return true;
-        }
-        return false;
+
+        return productRepository.deleteProduct(id);
     }
 
     public boolean activeProduct(long id) {
@@ -79,14 +74,7 @@ public class ProductService {
         return images.get(random.nextInt(images.size()));
     }
 
-    public List<Productprice> getAllPrice() {
-        return productRepository.getAllPrice();
-    }
-
-    public List<Productimage> getAllImgage() {
-        return productRepository.getAllImgage();
-    }
-    // New method to save Productprice
+     // New method to save Productprice
     public void saveProductPrice(Productprice productPrice) {
         productRepository.saveProductPrice(productPrice);
     }
@@ -100,4 +88,23 @@ public class ProductService {
         }
     }
 
+    public void getProductPrice(Long id) {
+        productRepository.getProductPrice(id);
+    }
+
+    public void getProductImage(Long id) {
+         productRepository.getProductImage(id);
+    }
+
+    public void getProductPriceNote(Long id) {
+         productRepository.getProductPriceNote();
+    }
+
+    public void getProductImageAlternative(Long id) {
+         productRepository.getProductImageAlternative();
+    }
+
+    public Product getProductById(Long productId) {
+        return productRepository.getProductById(productId);
+    }
 }
