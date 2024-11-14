@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>List of Post Comments</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        h1 {
+            text-align: center;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+<h1>List of Post Comments</h1>
+<table class="table table-hover">
+    <thead>
+    <tr>
+        <th>Id</th>
+        <th>Post Id</th>
+        <th>Parent Id</th>
+        <th>Title</th>
+        <th>Published</th>
+        <th>Created At</th>
+        <th>Published At</th>
+        <th>Content</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="comment : ${postComments}">
+        <td th:text="${comment.id}">Id</td>
+        <td th:text="${comment.post.id}">Post Id</td>
+        <td th:text="${comment.parentId}">Parent Id</td>
+        <td th:text="${comment.title}">Title</td>
+        <td th:text="${comment.published}">Published</td>
+        <td th:text="${comment.createdAt}">Created At</td>
+        <td th:text="${comment.publishedAt}">Published At</td>
+        <td th:text="${comment.content}">Content</td>
+    </tr>
+    </tbody>
+</table>
+</body>
+</html>
